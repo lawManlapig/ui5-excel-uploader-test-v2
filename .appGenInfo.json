@@ -1,0 +1,29 @@
+{
+  "generationParameters": {
+    "generationDate": "Tue Jul 08 2025 06:59:07 GMT+0000 (Coordinated Universal Time)",
+    "generatorPlatform": "SAP Business Application Studio",
+    "serviceType": "SAP System (ABAP On Premise)",
+    "metadataFilename": "",
+    "serviceUrl": "https://my403853.s4hana.cloud.sap/sap/opu/odata/sap/ZLAW_UI_BUILDING_O2",
+    "appName": "law-buildings-sample",
+    "appTitle": "Buildings - DEMO",
+    "appDescription": "Demo for Excel upload",
+    "appNamespace": "",
+    "ui5Theme": "sap_horizon",
+    "ui5Version": "1.130.11",
+    "enableCodeAssist": false,
+    "enableEslint": false,
+    "enableTypeScript": false,
+    "showMockDataInfo": true,
+    "generatorVersion": "1.18.2",
+    "template": "List Report Page V2",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [
+      {
+        "type": "Main Entity",
+        "value": "Buildings"
+      }
+    ],
+    "launchText": "In order to launch the generated app, simply run the following from the generated app root folder:\n\n```\n    npm start\n```"
+  }
+}

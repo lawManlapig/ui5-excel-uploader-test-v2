@@ -5,170 +5,103 @@ sap.ui.define([
 ], function (MessageToast, MessageBox, Fragment) {
     'use strict';
 
-    function _createUploadController(oExtensionAPI) {
-        //Local Variable
-        let oUploadDialog;
+    // Controller
+    function _createUploadController(extensionAPI) {
+        let uploadDialog;
 
-        function setOkButtonEnabled(bIsEnabled) {
-            oUploadDialog && oUploadDialog.getBeginButton().setEnabled(bIsEnabled);
-        }
-
-        function setDialogBusy(bIsBusy) {
-            oUploadDialog.setBusy(bIsBusy)
-        }
-
+        // Internal Functions
         function closeDialog() {
-            oUploadDialog && oUploadDialog.close()
+            uploadDialog && uploadDialog.close()
         }
 
-        function showError(sMessage) {
-            MessageBox.error("Upload failed: " + sMessage, { title: "Error" });
+        function setOkButtonEnabled(isEnabled) {
+            uploadDialog && uploadDialog.getButtons()[0].setEnabled(isEnabled);
         }
 
-        function byId(sId) {
-            return sap.ui.core.Fragment.byId("excelUploadDialog", sId);
+        function showError(message) {
+            MessageBox.error("Upload failed: " + message, { title: "Error" });
         }
 
-        //File Uploader Handlers
         return {
-            //Dialog Handler
-            onBeforeOpen: function (oEvent) {
-                oUploadDialog = oEvent.getSource();
-                oExtensionAPI.addDependent(oUploadDialog);
+            // Dialog Handlers
+            onBeforeOpen: function (event) {
+                uploadDialog = event.getSource();
+                // extensionAPI.addDependent(uploadDialog);
             },
 
-            //Dialog Handler
-            onAfterClose: function (oEvent) {
-                oExtensionAPI.removeDependent(oUploadDialog);
-                oUploadDialog.destroy();
-                oUploadDialog = undefined;
+            onAfterClose: function (event) {
+                // extensionAPI.removeDependent(uploadDialog);
+                uploadDialog.destroy();
+                uploadDialog = undefined;
             },
 
-            //Dialog Handler
-            onChange: function (oEvent) {
+            onChange: function (event) {
                 //Information Message
                 MessageBox.information("Make sure you are using the correct template before uploading.");
             },
 
-            //Button Handler
-            onUpload: function (oEvent) {
-                //Set the dialog to 'busy'
-                setDialogBusy(true);
-
-                //Set Header Parameters
-                var oFileUploader = byId("fileUploader"),
-                    headPar = new sap.ui.unified.FileUploaderParameter();
-
-                headPar.setName('slug');
-                headPar.setValue(sEntity);
-                oFileUploader.removeHeaderParameter('slug');
-                oFileUploader.addHeaderParameter(headPar);
-
-                //Set URI
-                var sUploadUri = oExtensionAPI._controller.extensionAPI._controller._oAppComponent
-                    .getManifestObject().resolveUri('../../odata/v4/upload-utility-meters-srv/ExcelUpload/excel');
-
-                oFileUploader.setUploadUrl(sUploadUri);
-
-                //Validate Upload File
-                oFileUploader
-                    .checkFileReadable().then(function () {
-                        oFileUploader.upload();
-                    }).catch(function (error) {
-                        showError("The file cannot be read.");
-                        setDialogBusy(false)
-                    });
-            },
-
-            //Button Handler
-            onCancel: function (oEvent) {
+            // Button Handlers
+            onCancelPress: function (event) {
                 closeDialog();
             },
 
-            //Dialog Handler
-            onTypeMismatch: function (oEvent) {
-                var sSupportedFileTypes = oEvent
+            onUploadPress: function (event) {
+                MessageToast.show("Upload Button click invoked.");
+            },
+
+            onTemplateDownloadPress: function (event) {
+                MessageToast.show("Download Template Button click invoked.");
+            },
+
+            // File Uploader Handlers
+            onUploadComplete: function (event) {
+                MessageToast.show("Download Template Button click invoked.");
+            },
+
+            onFileEmpty: function (event) {
+                setOkButtonEnabled(false)
+            },
+
+            onFileAllowed: function (event) {
+                setOkButtonEnabled(true)
+            },
+
+            onTypeMismatch: function (event) {
+                let supportedFileTypes = event
                     .getSource()
                     .getFileType()
-                    .map(function (sFileType) {
-                        return "*." + sFileType;
+                    .map(function (fileType) {
+                        return "*." + fileType;
                     })
                     .join(", ");
 
                 showError(
                     "The file type *." +
-                    oEvent.getParameter("fileType") +
+                    event.getParameter("fileType") +
                     " is not supported. Choose one of the following types: " +
-                    sSupportedFileTypes
+                    supportedFileTypes
                 );
             },
-
-            //Dialog Handler
-            onFileAllowed: function (oEvent) {
-                setOkButtonEnabled(true)
-            },
-
-            //Dialog Handler
-            onFileEmpty: function (oEvent) {
-                setOkButtonEnabled(false)
-            },
-
-            //Dialog Handler
-            onUploadComplete: function (oEvent) {
-                var sMessageRaw = oEvent.getParameter("responseRaw"),
-                    iStatus = oEvent.getParameter("status"),
-                    oFileUploader = oEvent.getSource();
-
-                oFileUploader.clear();
-                setOkButtonEnabled(false)
-                setDialogBusy(false)
-
-                if (iStatus >= 400) {
-                    var oResponse;
-
-                    try {
-                        oRawResponse = JSON.parse(sMessageRaw);
-                        showError(oResponse);
-                    } catch (e) {      //For XML Responses
-                        if (window.DOMParser) {
-                            var oParser = new DOMParser(),
-                                sXMLDoc = oParser.parseFromString(sMessageRaw, "text/html");
-                        } else {
-                            sXMLDoc = new ActiveXObject("Microsoft.XMLDOM");
-                            sXMLDoc.async = false;
-                            sXMLDoc.loadXML(sMessageRaw);
-                        };
-
-                        try {
-                            showError(sXMLDoc.getElementsByTagName("pre")[0].childNodes[0].nodeValue);
-                        } catch (e) {
-                            showError('Something went wrong.');
-                        };
-                    };
-                } else {
-                    MessageToast.show("File uploaded successfully");
-                    oExtensionAPI.refresh();
-                    closeDialog();
-                }
-            }
         }
     }
-
     // View Handlers
     return {
         openExcelUploadDialog: function (oEvent) {
-            // MessageToast.show("Custom handler invoked.");
-            let oSelf = this;
+            MessageToast.show("Open Dialog invoked.");
+            let view = this.getView();
 
-            //Opens the custom fragment created...
-            this.loadFragment({
-                id: 'excelUploadDialog',
-                name: 'lawbuildingssample.ext.fragment.ExcelUpload', //Filepath of the fragment
-                controller: _createUploadController(oSelf)
-            }).then(function (oDialog) {
-                oDialog.open();
-            });
-        }
+            Fragment.load({
+                id: "excel_upload",
+                name: "lawbuildingssample.ext.fragment.ExcelUpload",
+                type: "XML",
+                controller: _createUploadController(this)
+            }).then((inDialog) => {
+                let fileUploader = Fragment.byId("excel_upload", "fileUploader");
+
+                this.dialog = inDialog;
+                this.dialog.open();
+            }).catch(error => alert(error.message));
+        },
     };
 });
 

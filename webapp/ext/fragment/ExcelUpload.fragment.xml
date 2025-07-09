@@ -1,67 +1,37 @@
-<!--<core:FragmentDefinition xmlns:controls="sap.viz.ui5.controls" xmlns:core="sap.ui.core" xmlns="sap.m" xmlns:unif="sap.ui.unified">
-    <Dialog id="d1" title="Choose file to upload..." beforeOpen="onBeforeOpen" afterClose="onAfterClose">
-        <VBox id="vbox1" alignItems="Center">
-            <FlexBox id="fb1" alignItems="Stretch">       
-                <unif:FileUploader
-                    id="fileUploader"
-                    name="myFileUpload"
-                    fileType="xlsx"
-                    multiple="false"
-                    sendXHR="true"
-                    useMultipart="false"
-                    uploadUrl="upload-utility-meters-srv/ExcelUpload/excel"
-                    tooltip="Upload file to Cloud..."
-                    change="onChange"
-                    fileAllowed="onFileAllowed"
-                    fileEmpty="onFileEmpty"
-                    typeMissmatch="onTypeMismatch"
-                    uploadComplete="onUploadComplete"
-                    httpRequestMethod="Put"/>
-            </FlexBox>
-        </VBox>
-        <beginButton>
-            <Button id="b1" text="Upload" type="Emphasized" press="onUpload" enabled="false" icon="sap-icon://upload-to-cloud"/>
-        </beginButton>
-        <endButton>
-            <Button id="b3" text="Cancel" press="onCancel" icon="sap-icon://cancel"/>
-        </endButton>
-    </Dialog>
-</core:FragmentDefinition>-->
-
 <core:FragmentDefinition
-	xmlns:controls="sap.viz.ui5.controls"
-	xmlns:core="sap.ui.core"
+    id="fragment1"
+    xmlns:l="sap.ui.layout"
+	xmlns:u="sap.ui.unified"
+	xmlns:mvc="sap.ui.core.mvc"
 	xmlns="sap.m"
-	xmlns:unif="sap.ui.unified">
-	<Dialog
-		id="d1"
-		title="Choose file to upload..."
-		beforeOpen="onBeforeOpen"
+    xmlns:core="sap.ui.core">
+    <Dialog id="dialog1"
+		contentWidth="450px"
+        title="Choose File to upload..."
+        beforeOpen="onBeforeOpen"
 		afterClose="onAfterClose">
 		<VBox id="vbox1" alignItems="Center">
-            <FlexBox id="fb1" alignItems="Stretch">       
-                <unif:FileUploader
-                    id="fileUploader"
-                    name="myFileUpload"
-                    fileType="xlsx"
-                    multiple="false"
+			<FlexBox id="fb1" alignItems="Stretch">    
+				<u:FileUploader
+					id="fileUploader"
+					name="myFileUpload"
+					uploadUrl="upload/"
+					tooltip="Upload your file to the local server"
+					multiple="false"
                     sendXHR="true"
                     useMultipart="false"
-                    uploadUrl="buildings/ExcelUpload/excel"
-                    tooltip="Upload file to Cloud..."
-                    change="onChange"
-                    fileAllowed="onFileAllowed"
-                    fileEmpty="onFileEmpty"
-                    typeMissmatch="onTypeMismatch"
-                    uploadComplete="onUploadComplete"
-                    httpRequestMethod="Put"/>
-            </FlexBox>
-        </VBox>
-		<beginButton>
-            <Button id="b1" text="Upload" type="Emphasized" press="onUpload" enabled="false" icon="sap-icon://upload-to-cloud"/>
-        </beginButton>
-        <endButton>
-            <Button id="b3" text="Cancel" press="onCancel" icon="sap-icon://cancel"/>
-        </endButton>
-	</Dialog>
+					change="onChange"
+					fileType="xlsx"
+					fileAllowed="onFileAllowed"
+					fileEmpty="onFileEmpty"
+					typeMissmatch="onTypeMismatch"
+					uploadComplete="onUploadComplete"/>
+			</FlexBox>
+		</VBox>
+		<buttons>
+			<Button id="button1" text="Upload File" press="onUploadPress" type="Emphasized" enabled="false" icon="sap-icon://upload-to-cloud"/>
+			<Button id="button3" text="Download Template" press="onTemplateDownloadPress" type="Neutral" icon="sap-icon://document-text"/>
+			<Button id="button2" text="Cancel" press="onCancelPress" icon="sap-icon://cancel"/>
+		</buttons>
+    </Dialog>
 </core:FragmentDefinition>

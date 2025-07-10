@@ -9,6 +9,7 @@ sap.ui.define([
     // Controller
     function _createUploadController(extensionAPI) {
         let uploadDialog;
+        let internalExtensionAPI;
 
         // Internal Functions
         function closeDialog() {
@@ -28,6 +29,7 @@ sap.ui.define([
             onBeforeOpen: function (event) {
                 uploadDialog = event.getSource();
                 // extensionAPI.addDependent(uploadDialog);
+                internalExtensionAPI = extensionAPI;
             },
 
             onAfterClose: function (event) {
@@ -51,7 +53,38 @@ sap.ui.define([
             },
 
             onTemplateDownloadPress: function (event) {
-                MessageToast.show("Download Template Button click invoked.");
+                let excelColumnList = [];
+                let columnList = {};
+
+                let model = internalExtensionAPI.getView().getModel();
+                let building = model.getServiceMetadata().dataServices.schema[0].entityType.find(x => x.name === 'BuildingsType');
+
+                // Set the list of entity property, that has to be present in excel file template
+                let propertyList = ['BuildingId', 'BuildingName', 'NRooms', 'AddressLine',
+                    'City', 'State', 'Country'];
+
+                // Finding the property description corresponding to the property id
+                propertyList.forEach((value, index) => {
+                    let label = "";
+                    let property = building.property.find(x => x.name === value);
+                    
+                    // Logic for label :
+                    // Get the label from extensions node... but if not found, separate the "value" variable by spaces
+                    label = property.extensions?.find(x => x.name === 'label')?.value || value.replace(/([A-Z])/g, ' $1').trim();
+                    columnList[label] = '';
+                });
+                excelColumnList.push(columnList);
+
+                // Initialising the excel work sheet
+                const ws = XLSX.utils.json_to_sheet(excelColumnList);
+                // Creating the new excel work book
+                const wb = XLSX.utils.book_new();
+                // Set the file value
+                XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+                // Download the created excel file
+                XLSX.writeFile(wb, 'RAP - Buildings.xlsx');
+
+                MessageToast.show("Template File Downloading...");
             },
 
             // File Uploader Handlers

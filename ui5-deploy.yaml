@@ -18,7 +18,7 @@ builder:
           url: https://my403853.s4hana.cloud.sap
           authenticationType: reentranceTicket # SAML support for vscode
         app:
-          name: DEMOBUILDINGS
+          name: ZDEMOBUILDINGS
           package: ZLAW_EXCEL_UPLOADER_M
           transport: X7NK900684
         exclude:

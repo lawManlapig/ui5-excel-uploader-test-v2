@@ -197,7 +197,7 @@ sap.ui.define([
 
             Fragment.load({
                 id: "excel_upload",
-                name: "lawbuildingssample.ext.fragment.ExcelUpload",
+                name: "demobuildings.ext.fragment.ExcelUpload",
                 type: "XML",
                 controller: _createUploadController(this)
             }).then((inDialog) => {

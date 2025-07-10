@@ -1,7 +1,7 @@
 {
     "_version": "1.65.0",
     "sap.app": {
-        "id": "lawbuildingssample",
+        "id": "demobuildings",
         "type": "application",
         "i18n": "i18n/i18n.properties",
         "applicationVersion": {
@@ -96,7 +96,7 @@
             "i18n": {
                 "type": "sap.ui.model.resource.ResourceModel",
                 "settings": {
-                    "bundleName": "lawbuildingssample.i18n.i18n"
+                    "bundleName": "demobuildings.i18n.i18n"
                 }
             },
             "": {
@@ -128,7 +128,7 @@
             "extensions": {
                 "sap.ui.controllerExtensions": {
                     "sap.suite.ui.generic.template.ListReport.view.ListReport": {
-                        "controllerName": "lawbuildingssample.ext.controller.ListReportExt",
+                        "controllerName": "demobuildings.ext.controller.ListReportExt",
                         "sap.ui.generic.app": {
                             "Buildings": {
                                 "EntitySet": "Buildings",

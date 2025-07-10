@@ -10,6 +10,7 @@ sap.ui.define([
     function _createUploadController(extensionAPI) {
         let uploadDialog;
         let internalExtensionAPI;
+        let excelDataArray = [];
 
         // Internal Functions
         function closeDialog() {
@@ -41,6 +42,25 @@ sap.ui.define([
             onChange: function (event) {
                 //Information Message
                 MessageBox.information("Make sure you are using the correct template before uploading.");
+
+                let fileUploader = Fragment.byId("excel_upload", "fileUploader"); // Get File Uploader instance
+                let file = jQuery.sap.domById(fileUploader.getId() + "-fu").files[0]; // Get File details
+                let reader = new FileReader();
+
+                // Push to global array
+                reader.onload = (e) => {
+                    let xlsx_content = e.currentTarget.result;
+                    let workbook = XLSX.read(xlsx_content, { type: 'binary' });
+                    let excelData = XLSX.utils.sheet_to_row_object_array(workbook.Sheets["Sheet1"]);
+
+                    workbook.SheetNames.forEach(function (sheetName) {
+                        // Appending the excel file data to the global variable
+                        // that.excelSheetsData.push(XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]));
+                        excelDataArray.push(XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]));
+                    });
+                };
+
+                reader.readAsArrayBuffer(file);
             },
 
             // Button Handlers
@@ -49,7 +69,20 @@ sap.ui.define([
             },
 
             onUploadPress: function (event) {
-                MessageToast.show("Upload Button click invoked.");
+                let that = this;
+
+                // Creating a promise as the extension api accepts odata call in form of promise only
+                let addMessage = function () {
+                    return new Promise((resolve, reject) => {
+                        that.callOdata(resolve, reject);
+                    });
+                };
+
+                // Build arguments then call the OData Service
+                let parameters = { sActionLabel: event.getSource().getText() };
+                internalExtensionAPI.extensionAPI.securedExecution(addMessage, parameters);
+
+                closeDialog();
             },
 
             onTemplateDownloadPress: function (event) {
@@ -67,7 +100,7 @@ sap.ui.define([
                 propertyList.forEach((value, index) => {
                     let label = "";
                     let property = building.property.find(x => x.name === value);
-                    
+
                     // Logic for label :
                     // Get the label from extensions node... but if not found, separate the "value" variable by spaces
                     label = property.extensions?.find(x => x.name === 'label')?.value || value.replace(/([A-Z])/g, ' $1').trim();
@@ -89,7 +122,8 @@ sap.ui.define([
 
             // File Uploader Handlers
             onUploadComplete: function (event) {
-                MessageToast.show("Download Template Button click invoked.");
+                // getting the UploadSet Control reference
+                let fileUploader = Fragment.byId("excel_upload", "fileUploader");
             },
 
             onFileEmpty: function (event) {
@@ -116,6 +150,43 @@ sap.ui.define([
                     supportedFileTypes
                 );
             },
+
+            // Helper
+            callOdata: function (resolve, reject) {
+                let model = internalExtensionAPI.getView().getModel();
+                let payload = {};
+
+                excelDataArray[0].forEach((value, index) => {
+                    // Setting Payload Data
+                    payload = {
+                        "BuildingName": value["Building Name"],
+                        "NRooms": value["Number of rooms"],
+                        "AddressLine": value["Address Line"],
+                        "City": value["City"],
+                        "State": value["State"],
+                        "Country": value["Country"]
+                    };
+
+                    // Setting excel file row number for identifying the exact row in case of error or success
+                    payload.ExcelRowNumber = (index + 1);
+
+                    // Calling the odata service
+                    model.create("/Buildings", payload, {
+                        success: (result) => {
+                            console.log(result);
+                            let messageManager = sap.ui.getCore().getMessageManager();
+                            let message = new sap.ui.core.message.Message({
+                                message: "Building Created with ID: " + result.BuildingId,
+                                persistent: true, // Create message as transition message
+                                type: sap.ui.core.MessageType.Success
+                            });
+                            messageManager.addMessages(message);
+                            resolve();
+                        },
+                        error: reject
+                    });
+                });
+            }
         }
     }
     // View Handlers
@@ -138,227 +209,3 @@ sap.ui.define([
         },
     };
 });
-
-/* global XLSX:true 
-sap.ui.define(["sap/m/MessageToast", "sap/m/MessageBox"],
-    function (MessageToast, MessageBox) {
-        "use strict";
-        function _createUploadController(sEntity, oExtensionAPI,) {
-            //Local Variable
-            var oUploadDialog;
- 
-            function setOkButtonEnabled(bIsEnabled) {
-                oUploadDialog && oUploadDialog.getBeginButton().setEnabled(bIsEnabled);
-            }
- 
-            function setDialogBusy(bIsBusy) {
-                oUploadDialog.setBusy(bIsBusy)
-            }
- 
-            function closeDialog() {
-                oUploadDialog && oUploadDialog.close()
-            }
- 
-            function showError(sMessage) {
-                MessageBox.error("Upload failed: " + sMessage, { title: "Error" });
-            }
- 
-            function byId(sId) {
-                return sap.ui.core.Fragment.byId("excelUploadDialog", sId);
-            }
- 
-            //File Uploader Handlers
-            return {
-                //Dialog Handler
-                onBeforeOpen: function (oEvent) {
-                    oUploadDialog = oEvent.getSource();
-                    oExtensionAPI.addDependent(oUploadDialog);
-                },
- 
-                //Dialog Handler
-                onAfterClose: function (oEvent) {
-                    oExtensionAPI.removeDependent(oUploadDialog);
-                    oUploadDialog.destroy();
-                    oUploadDialog = undefined;
-                },
- 
-                //Dialog Handler
-                onChange: function (oEvent) {
-                    //Information Message
-                    MessageBox.information("Make sure you are using the correct template before uploading.");
-                },
- 
-                //Button Handler
-                onUpload: function (oEvent) {
-                    //Set the dialog to 'busy'
-                    setDialogBusy(true);
- 
-                    //Set Header Parameters
-                    var oFileUploader = byId("fileUploader"),
-                        headPar = new sap.ui.unified.FileUploaderParameter();
- 
-                    headPar.setName('slug');
-                    headPar.setValue(sEntity);
-                    oFileUploader.removeHeaderParameter('slug');
-                    oFileUploader.addHeaderParameter(headPar);
- 
-                    //Set URI
-                    var sUploadUri = oExtensionAPI._controller.extensionAPI._controller._oAppComponent
-                        .getManifestObject().resolveUri('../../odata/v4/upload-utility-meters-srv/ExcelUpload/excel');
- 
-                    oFileUploader.setUploadUrl(sUploadUri);
- 
-                    //Validate Upload File
-                    oFileUploader
-                        .checkFileReadable().then(function () {
-                            oFileUploader.upload();
-                        }).catch(function (error) {
-                            showError("The file cannot be read.");
-                            setDialogBusy(false)
-                        });
-                },
- 
-                //Button Handler
-                onCancel: function (oEvent) {
-                    closeDialog();
-                },
- 
-                //Dialog Handler
-                onTypeMismatch: function (oEvent) {
-                    var sSupportedFileTypes = oEvent
-                        .getSource()
-                        .getFileType()
-                        .map(function (sFileType) {
-                            return "*." + sFileType;
-                        })
-                        .join(", ");
- 
-                    showError(
-                        "The file type *." +
-                        oEvent.getParameter("fileType") +
-                        " is not supported. Choose one of the following types: " +
-                        sSupportedFileTypes
-                    );
-                },
- 
-                //Dialog Handler
-                onFileAllowed: function (oEvent) {
-                    setOkButtonEnabled(true)
-                },
- 
-                //Dialog Handler
-                onFileEmpty: function (oEvent) {
-                    setOkButtonEnabled(false)
-                },
- 
-                //Dialog Handler
-                onUploadComplete: function (oEvent) {
-                    var sMessageRaw = oEvent.getParameter("responseRaw"),
-                        iStatus = oEvent.getParameter("status"),
-                        oFileUploader = oEvent.getSource();
- 
-                    oFileUploader.clear();
-                    setOkButtonEnabled(false)
-                    setDialogBusy(false)
- 
-                    if (iStatus >= 400) {
-                        var oResponse;
- 
-                        try {
-                            oRawResponse = JSON.parse(sMessageRaw);
-                            showError(oResponse);
-                        } catch (e) {      //For XML Responses
-                            if (window.DOMParser) {
-                                var oParser = new DOMParser(),
-                                    sXMLDoc = oParser.parseFromString(sMessageRaw, "text/html");
-                            } else {
-                                sXMLDoc = new ActiveXObject("Microsoft.XMLDOM");
-                                sXMLDoc.async = false;
-                                sXMLDoc.loadXML(sMessageRaw);
-                            };
- 
-                            try {
-                                showError(sXMLDoc.getElementsByTagName("pre")[0].childNodes[0].nodeValue);
-                            } catch (e) {
-                                showError('Something went wrong.');
-                            };
-                        };
-                    } else {
-                        MessageToast.show("File uploaded successfully");
-                        oExtensionAPI.refresh();
-                        closeDialog();
-                    }
-                }
-            }
-        }
-        //View Handlers
-        return {
-            //Upload File
-            onUploadFile: function (oEvent) {
-                let oSelf = this;
- 
-                //Opens the custom fragment created...
-                this.loadFragment({
-                    id: 'excelUploadDialog',
-                    name: 'umupload.extensions.fragments.uploadxls', //Filepath of the fragment
-                    controller: _createUploadController('umm_db_UtilityMeterUpload', oSelf)
-                }).then(function (oDialog) {
-                    oDialog.open();
-                });
-            },
- 
-            //Download Template
-            onDownloadTemp: function (oEvent) {
-                var excelColumns = [];
- 
-                //Set the Headers/Guide in the Excel File as JSON
-                var jsonHeaders = { 
-                    COMPANYCODE_COMPANYCODE: 'Company Code',
-                    PROJECTCODE_PROJECTCODE: 'Project Code',
-                    BUILDING_BUILDINGCODE: 'Building Code',
-                    LAND_LANDCODE: 'Land Code',
-                    // METERNUMBER: '<Just leave this as blank>',
-                    TYPEOFMETER_CODE: 'Type Of Meter',
-                    METEREQBRAND: 'Meter Equipment Brand',
-                    SERIALNUMBER: 'Serial Number',
-                    MULTIPLIER: 'Multiplier',
-                    REALESTATEOBJECT_REOBJECT: 'Real Estate Object',
-                    COUNTEROVRFLW: 'Counter Overflow',
-                    UOM_ITEMCODE: 'Unit of Measure',
-                    // CREATEDAT: '<Just leave this as blank>',
-                    // CREATEDBY: '<Just leave this as blank>',
-                    // MODIFIEDAT: '<Just leave this as blank>',
-                    // MODIFIEDBY: '<Just leave this as blank>',
-                    // ID: '<Just leave this as blank>',
-                    // STATUS: '<Just leave this as blank>',
-                    // MESSAGEINFO: '<Just leave this as blank>'
-                };
- 
-                //Add to Array
-                excelColumns.push(jsonHeaders);
- 
-                //Worksheeet and Workbook
-                const ws = XLSX.utils.json_to_sheet(excelColumns);
-                
-                //Sets column width
-                ws['!cols'] = [
-                    {wch:30}, {wch:30}, {wch:30}, {wch:30}, {wch:30},
-                    {wch:30}, {wch:30}, {wch:30}, {wch:30}, {wch:30},
-                    {wch:30}
-                ];
- 
-                const wb = XLSX.utils.book_new();
- 
-                //Add to Sheet
-                XLSX.utils.book_append_sheet(wb, ws, 'Utility Meters Upload');
- 
-                //Download File
-                XLSX.writeFile(wb, 'Utility Meters Upload Template.xlsx');
- 
-                //Flavor Text
-                MessageToast.show("Template File Downloading...");
-            }
-        };
-    });
-
-*/

@@ -4,6 +4,12 @@ specVersion: "3.1"
 metadata:
   name: lawbuildingssample
 type: application
+# Start of Manual
+builder:
+  customTasks:
+    - name: ui5-tooling-modules-task
+      afterTask: replaceVersion
+# End of Manual
 server:
   customMiddleware:
     - name: fiori-tools-proxy
@@ -31,3 +37,7 @@ server:
       configuration:
         flp:
           theme: sap_horizon
+    # Start of Manual
+    - name: ui5-tooling-modules-middleware
+      afterMiddleware: compression
+    # End of Manual

@@ -1,8 +1,9 @@
 sap.ui.define([
     "sap/m/MessageToast",
     "sap/m/MessageBox",
-    "sap/ui/core/Fragment"
-], function (MessageToast, MessageBox, Fragment) {
+    "sap/ui/core/Fragment",
+    "xlsx"
+], function (MessageToast, MessageBox, Fragment, XLSX) {
     'use strict';
 
     // Controller
@@ -87,7 +88,7 @@ sap.ui.define([
     // View Handlers
     return {
         openExcelUploadDialog: function (oEvent) {
-            MessageToast.show("Open Dialog invoked.");
+            console.log(XLSX.version);
             let view = this.getView();
 
             Fragment.load({
